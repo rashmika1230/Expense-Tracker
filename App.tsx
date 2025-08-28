@@ -8,11 +8,12 @@ import {
   StyleSheet,
   Alert,
   StatusBar,
+  SafeAreaView,
+  Pressable,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ALERT_TYPE, AlertNotificationRoot, Dialog } from 'react-native-alert-notification';
+import { ALERT_TYPE, AlertNotificationRoot, Dialog, Toast } from 'react-native-alert-notification';
 
-// Types
 interface Expense {
   id: string;
   title: string;
@@ -31,7 +32,7 @@ export default function App() {
 
   const categories = ['Food', 'Transport', 'Shopping', 'Bills', 'Other'];
 
-  // Load expenses on app start
+ 
   useEffect(() => {
     loadExpenses();
   }, []);
@@ -58,13 +59,21 @@ export default function App() {
 
   const addExpense = () => {
     if (!title.trim() || !amount.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Toast.show({
+        type: ALERT_TYPE.DANGER,
+        title: 'Error',
+        textBody: 'Fill all the fields',
+      })
       return;
     }
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
+      Toast.show({
+        type: ALERT_TYPE.DANGER,
+        title: 'Error',
+        textBody: 'Fill all the fields',
+      })
       return;
     }
 
@@ -80,7 +89,7 @@ export default function App() {
     setExpenses(updatedExpenses);
     saveExpenses(updatedExpenses);
 
-    // Clear form
+   
     setTitle('');
     setAmount('');
     setCategory('Food');
@@ -88,21 +97,21 @@ export default function App() {
 
   const deleteExpense = (id: string) => {
     Dialog.show({
-      type: ALERT_TYPE.DANGER,              
+      type: ALERT_TYPE.DANGER,
       title: "Delete Expense",
       textBody: "Are you sure you want to delete this expense?",
-      button: "Delete",                     
+      button: "Delete",
       closeOnOverlayTap: true,
       onPressButton: async () => {
         try {
-          // perform deletion
+          
           const updatedExpenses = expenses.filter(exp => exp.id !== id);
-          setExpenses(updatedExpenses);     
-          await saveExpenses(updatedExpenses); 
+          setExpenses(updatedExpenses);
+          await saveExpenses(updatedExpenses);
         } catch (err) {
           console.warn("Delete failed", err);
         } finally {
-          Dialog.hide();                     
+          Dialog.hide();
         }
       },
     });
@@ -146,11 +155,12 @@ export default function App() {
 
   return (
 
+    <SafeAreaView style={{flex:1}}>
     <AlertNotificationRoot>
       <View style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#6366f1" />
 
-        {/* Header */}
+      
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Expense Tracker</Text>
           <View style={styles.totalContainer}>
@@ -159,7 +169,7 @@ export default function App() {
           </View>
         </View>
 
-        {/* Add Expense Form */}
+        
         <View style={styles.formContainer}>
           <Text style={styles.sectionTitle}>Add New Expense</Text>
 
@@ -187,12 +197,12 @@ export default function App() {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.addButton} onPress={addExpense}>
+          <Pressable style={styles.addButton} onPress={addExpense}>
             <Text style={styles.addButtonText}>Add Expense</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
-        {/* Expenses List */}
+        
         <View style={styles.listContainer}>
           <Text style={styles.sectionTitle}>Recent Expenses</Text>
           {expenses.length === 0 ? (
@@ -212,6 +222,7 @@ export default function App() {
         </View>
       </View>
     </AlertNotificationRoot>
+    </SafeAreaView>
   );
 }
 
