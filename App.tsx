@@ -14,6 +14,8 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ALERT_TYPE, AlertNotificationRoot, Dialog, Toast } from 'react-native-alert-notification';
 
+const BACKEND_URL = "https://e25c92eb57a9.ngrok-free.app";
+
 interface Expense {
   id: string;
   title: string;
@@ -30,24 +32,60 @@ export default function App() {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');
 
-  const categories = ['Food', 'Transport', 'Shopping', 'Bills', 'Other'];
+  const [isOnline, setIsonline] = useState(true);
 
- 
+  const categories = ['Food', 'Transport', 'Shopping', 'Bills', 'Healtcare', 'Other'];
+
+
   useEffect(() => {
     loadExpenses();
-  }, []);
+    setIsonline(true);
+  }, []); 
 
   const loadExpenses = async () => {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
 
-      if (stored) {
-        setExpenses(JSON.parse(stored));
+      if (isOnline) {
+
+        await laodDtaFromDatabase();
+
+      } else {
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+
+        if (stored) {
+          setExpenses(JSON.parse(stored));
+        }
       }
+
+
     } catch (error) {
       console.error('Failed to load expenses:', error);
     }
   };
+
+  const laodDtaFromDatabase = async () => {
+    try {
+      const response = await fetch(
+        BACKEND_URL + "/ExpenseTracker/LoadExpenses",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const json = await response.json();
+        setExpenses(json.expenseList);
+      } else {
+        
+      }
+
+    } catch (error) {
+      // need to insert alert
+    }
+  }; 
 
   const saveExpenses = async (newExpenses: Expense[]) => {
     try {
@@ -55,8 +93,8 @@ export default function App() {
     } catch (error) {
       console.error('Failed to save expenses:', error);
     }
-  };
-
+  }; 
+  
   const addExpense = () => {
     if (!title.trim() || !amount.trim()) {
       Toast.show({
@@ -89,7 +127,7 @@ export default function App() {
     setExpenses(updatedExpenses);
     saveExpenses(updatedExpenses);
 
-   
+
     setTitle('');
     setAmount('');
     setCategory('Food');
@@ -104,7 +142,7 @@ export default function App() {
       closeOnOverlayTap: true,
       onPressButton: async () => {
         try {
-          
+
           const updatedExpenses = expenses.filter(exp => exp.id !== id);
           setExpenses(updatedExpenses);
           await saveExpenses(updatedExpenses);
@@ -155,73 +193,73 @@ export default function App() {
 
   return (
 
-    <SafeAreaView style={{flex:1}}>
-    <AlertNotificationRoot>
-      <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#6366f1" />
+    <SafeAreaView style={{ flex: 1 }}>
+      <AlertNotificationRoot>
+        <View style={styles.container}>
+          <StatusBar barStyle="light-content" backgroundColor="#6366f1" />
 
-      
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Expense Tracker</Text>
-          <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>Total Spent</Text>
-            <Text style={styles.totalAmount}>Rs {totalAmount.toFixed(2)}</Text>
-          </View>
-        </View>
 
-        
-        <View style={styles.formContainer}>
-          <Text style={styles.sectionTitle}>Add New Expense</Text>
-
-          <TextInput
-            style={styles.input}
-            placeholder="What did you buy?"
-            placeholderTextColor="#9ca3af"
-            value={title}
-            onChangeText={setTitle}
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="0.00"
-            placeholderTextColor="#9ca3af"
-            value={amount}
-            onChangeText={setAmount}
-            keyboardType="numeric"
-          />
-
-          <View style={styles.categoriesContainer}>
-            <Text style={styles.categoryLabel}>Category:</Text>
-            <View style={styles.categoryButtons}>
-              {categories.map(renderCategoryButton)}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Expense Tracker</Text>
+            <View style={styles.totalContainer}>
+              <Text style={styles.totalLabel}>Total Spent</Text>
+              <Text style={styles.totalAmount}>Rs {totalAmount.toFixed(2)}</Text>
             </View>
           </View>
 
-          <Pressable style={styles.addButton} onPress={addExpense}>
-            <Text style={styles.addButtonText}>Add Expense</Text>
-          </Pressable>
-        </View>
 
-        
-        <View style={styles.listContainer}>
-          <Text style={styles.sectionTitle}>Recent Expenses</Text>
-          {expenses.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No expenses yet</Text>
-              <Text style={styles.emptySubtext}>Add your first expense above</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={expenses}
-              renderItem={renderExpense}
-              keyExtractor={item => item.id}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.listContent}
+          <View style={styles.formContainer}>
+            <Text style={styles.sectionTitle}>Add New Expense</Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="What did you buy?"
+              placeholderTextColor="#9ca3af"
+              value={title}
+              onChangeText={setTitle}
             />
-          )}
+
+            <TextInput
+              style={styles.input}
+              placeholder="0.00"
+              placeholderTextColor="#9ca3af"
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="numeric"
+            />
+
+            <View style={styles.categoriesContainer}>
+              <Text style={styles.categoryLabel}>Category:</Text>
+              <View style={styles.categoryButtons}>
+                {categories.map(renderCategoryButton)}
+              </View>
+            </View>
+
+            <Pressable style={styles.addButton} onPress={addExpense}>
+              <Text style={styles.addButtonText}>Add Expense</Text>
+            </Pressable>
+          </View>
+
+
+          <View style={styles.listContainer}>
+            <Text style={styles.sectionTitle}>Recent Expenses</Text>
+            {expenses.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>No expenses yet</Text>
+                <Text style={styles.emptySubtext}>Add your first expense above</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={expenses}
+                renderItem={renderExpense}
+                keyExtractor={item => item.id}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.listContent}
+              />
+            )}
+          </View>
         </View>
-      </View>
-    </AlertNotificationRoot>
+      </AlertNotificationRoot>
     </SafeAreaView>
   );
 }
