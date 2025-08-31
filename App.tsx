@@ -6,15 +6,13 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
-  Alert,
-  StatusBar,
   SafeAreaView,
   Pressable,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ALERT_TYPE, AlertNotificationRoot, Dialog, Toast } from 'react-native-alert-notification';
 
-const BACKEND_URL = "https://e25c92eb57a9.ngrok-free.app";
+const BACKEND_URL = "https://945f7c53c314.ngrok-free.app";
 
 interface Expense {
   id: string;
@@ -24,115 +22,124 @@ interface Expense {
   date: string;
 }
 
-const STORAGE_KEY = '@expense_tracker';
-
 export default function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');
 
-  const [isOnline, setIsonline] = useState(true);
+  const categories = ['Food', 'Transport', 'Shopping', 'Bills', 'Healthcare', 'Other'];
 
-  const categories = ['Food', 'Transport', 'Shopping', 'Bills', 'Healtcare', 'Other'];
-
-
+  // Load expenses when app starts
   useEffect(() => {
     loadExpenses();
-    setIsonline(true);
-  }, []); 
+  }, []);
 
+  // Load expenses from AsyncStorage
   const loadExpenses = async () => {
     try {
-
-      if (isOnline) {
-
-        await laodDtaFromDatabase();
-
-      } else {
-        const stored = await AsyncStorage.getItem(STORAGE_KEY);
-
-        if (stored) {
-          setExpenses(JSON.parse(stored));
-        }
+      const saved = await AsyncStorage.getItem('@expenses');
+      if (saved) {
+        setExpenses(JSON.parse(saved));
       }
-
-
     } catch (error) {
-      console.error('Failed to load expenses:', error);
+      console.log('Error loading expenses:', error);
     }
   };
 
-  const laodDtaFromDatabase = async () => {
+  // Save expenses to AsyncStorage
+  const saveToStorage = async (newExpenses: Expense[]) => {
     try {
-      const response = await fetch(
-        BACKEND_URL + "/ExpenseTracker/LoadExpenses",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      await AsyncStorage.setItem('@expenses', JSON.stringify(newExpenses));
+    } catch (error) {
+      console.log('Error saving expenses:', error);
+    }
+  };
 
-      if (response.ok) {
-        const json = await response.json();
-        setExpenses(json.expenseList);
+  // Save expense to backend database
+  const saveToDatabase = async (expense: Expense) => {
+    try {
+      const response = await fetch(BACKEND_URL + "/ExpenseTracker/SaveExpenses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: expense.id,
+          title: expense.title,
+          amount: expense.amount,
+          category: expense.category,
+          date: expense.date,
+          user: "1",
+        }),
+      });
+
+      const result = await response.json();
+      if (result.status) {
+        console.log('Saved to database successfully');
       } else {
-        
+        console.log('Database save failed');
       }
-
     } catch (error) {
-      // need to insert alert
+      console.log('Error connecting to database:', error);
     }
-  }; 
+  };
 
-  const saveExpenses = async (newExpenses: Expense[]) => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newExpenses));
-    } catch (error) {
-      console.error('Failed to save expenses:', error);
-    }
-  }; 
-  
-  const addExpense = () => {
+  // Add new expense
+  const addExpense = async () => {
+    // Check if fields are filled
     if (!title.trim() || !amount.trim()) {
       Toast.show({
         type: ALERT_TYPE.DANGER,
         title: 'Error',
-        textBody: 'Fill all the fields',
-      })
+        textBody: 'Please fill in all fields',
+      });
       return;
     }
 
+    // Check if amount is valid number
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
       Toast.show({
         type: ALERT_TYPE.DANGER,
         title: 'Error',
-        textBody: 'Fill all the fields',
-      })
+        textBody: 'Please enter a valid amount',
+      });
       return;
     }
 
+    // Create new expense
     const newExpense: Expense = {
       id: Date.now().toString(),
       title: title.trim(),
       amount: numAmount,
-      category,
+      category: category,
       date: new Date().toLocaleDateString(),
     };
 
+    // Add to list
     const updatedExpenses = [newExpense, ...expenses];
     setExpenses(updatedExpenses);
-    saveExpenses(updatedExpenses);
 
+    // Save to phone storage
+    await saveToStorage(updatedExpenses);
 
+    // Save to database
+    await saveToDatabase(newExpense);
+
+    // Clear form
     setTitle('');
     setAmount('');
     setCategory('Food');
+
+    Toast.show({
+      type: ALERT_TYPE.SUCCESS,
+      title: 'Success',
+      textBody: 'Expense added!',
+    });
   };
 
+  // Delete expense
   const deleteExpense = (id: string) => {
     Dialog.show({
       type: ALERT_TYPE.DANGER,
@@ -141,22 +148,37 @@ export default function App() {
       button: "Delete",
       closeOnOverlayTap: true,
       onPressButton: async () => {
-        try {
+        // Remove from list
+        const updatedExpenses = expenses.filter(exp => exp.id !== id);
+        setExpenses(updatedExpenses);
 
-          const updatedExpenses = expenses.filter(exp => exp.id !== id);
-          setExpenses(updatedExpenses);
-          await saveExpenses(updatedExpenses);
-        } catch (err) {
-          console.warn("Delete failed", err);
-        } finally {
-          Dialog.hide();
+        // Save to phone storage
+        await saveToStorage(updatedExpenses);
+
+        // Delete from database
+        try {
+          await fetch(BACKEND_URL + "/ExpenseTracker/DeleteExpenses?id=" + id, {
+            method: "DELETE",
+          });
+        } catch (error) {
+          console.log('Error deleting from database:', error);
         }
+
+        Toast.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Success',
+          textBody: 'Expense deleted!',
+        });
+
+        Dialog.hide();
       },
     });
   };
 
+  // Calculate total amount
   const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
+  // Render each expense item
   const renderExpense = ({ item }: { item: Expense }) => (
     <TouchableOpacity
       style={styles.expenseCard}
@@ -173,6 +195,7 @@ export default function App() {
     </TouchableOpacity>
   );
 
+  // Render category buttons
   const renderCategoryButton = (cat: string) => (
     <TouchableOpacity
       key={cat}
@@ -192,13 +215,10 @@ export default function App() {
   );
 
   return (
-
     <SafeAreaView style={{ flex: 1 }}>
       <AlertNotificationRoot>
         <View style={styles.container}>
-          <StatusBar barStyle="light-content" backgroundColor="#6366f1" />
-
-
+          {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Expense Tracker</Text>
             <View style={styles.totalContainer}>
@@ -207,7 +227,7 @@ export default function App() {
             </View>
           </View>
 
-
+          {/* Add Expense Form */}
           <View style={styles.formContainer}>
             <Text style={styles.sectionTitle}>Add New Expense</Text>
 
@@ -240,7 +260,7 @@ export default function App() {
             </Pressable>
           </View>
 
-
+          {/* Expenses List */}
           <View style={styles.listContainer}>
             <Text style={styles.sectionTitle}>Recent Expenses</Text>
             {expenses.length === 0 ? (
