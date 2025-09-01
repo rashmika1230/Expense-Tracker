@@ -16,7 +16,7 @@ import { RootStackParamList } from '../../App';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Registration'>;
 
-const BACKEND_URL = "https://945f7c53c314.ngrok-free.app";
+const BACKEND_URL = "https://5840ccdf86e3.ngrok-free.app";
 
 export default function Registration({ navigation }: Props) {
   const [fullName, setFullName] = useState('');
@@ -160,13 +160,13 @@ export default function Registration({ navigation }: Props) {
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled" // allows tapping inputs/buttons while keyboard is open
           >
-            {/* Header */}
+          
             <View style={styles.header}>
               <Text style={styles.headerTitle}>Create Account</Text>
               <Text style={styles.headerSubtitle}>Join us to track your expenses</Text>
             </View>
 
-            {/* Form Container */}
+            
             <View style={styles.formContainer}>
               <Text style={styles.sectionTitle}>Sign Up</Text>
 
@@ -234,7 +234,7 @@ export default function Registration({ navigation }: Props) {
               </Pressable>
             </View>
 
-            {/* Footer */}
+         
             <View style={styles.footer}>
               <Text style={styles.footerText}>Already have an account?</Text>
               <Pressable onPress={navigateToLogin}>

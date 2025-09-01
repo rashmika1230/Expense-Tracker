@@ -13,9 +13,9 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ALERT_TYPE, AlertNotificationRoot, Dialog, Toast } from 'react-native-alert-notification';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App'; 
+import { RootStackParamList } from '../../App';
 
-const BACKEND_URL = "https://945f7c53c314.ngrok-free.app";
+const BACKEND_URL = "https://5840ccdf86e3.ngrok-free.app";
 
 interface Expense {
     id: string;
@@ -24,9 +24,10 @@ interface Expense {
     category: string;
     date: string;
 }
+
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
-export default function Home({ route }: Props) {
+export default function Home({ route,navigation }: Props) {
 
     const logUser = route.params.user;
 
@@ -50,14 +51,14 @@ export default function Home({ route }: Props) {
         })();
     }, [logUser.id]);
 
-    
+
     const loadExpenses = async (userId: string | number) => {
         try {
             const saved = await AsyncStorage.getItem(`@expenses_${userId}`);
             if (saved) {
                 setExpenses(JSON.parse(saved));
             } else {
-                setExpenses([]); 
+                setExpenses([]);
             }
         } catch (error) {
             ToastAndroid.showWithGravityAndOffset(
@@ -70,7 +71,7 @@ export default function Home({ route }: Props) {
         }
     };
 
-  //save loacal
+    //save loacal
     const saveToStorage = async (userId: string | number, newExpenses: Expense[]) => {
         try {
             await AsyncStorage.setItem(`@expenses_${userId}`, JSON.stringify(newExpenses));
@@ -133,7 +134,7 @@ export default function Home({ route }: Props) {
 
     // Add new expense
     const addExpense = async () => {
-      
+
         if (!title.trim() || !amount.trim()) {
             Toast.show({
                 type: ALERT_TYPE.DANGER,
@@ -164,7 +165,7 @@ export default function Home({ route }: Props) {
         const updatedExpenses = [newExpense, ...expenses];
         setExpenses(updatedExpenses);
 
-        await saveToStorage(logUser.id,updatedExpenses);
+        await saveToStorage(logUser.id, updatedExpenses);
 
         await saveToDatabase(newExpense);
 
@@ -194,7 +195,7 @@ export default function Home({ route }: Props) {
                 setExpenses(updatedExpenses);
 
                 // Save to phone storage
-              await saveToStorage(logUser.id,updatedExpenses);
+                await saveToStorage(logUser.id, updatedExpenses);
 
                 // Delete from database
                 try {
@@ -222,10 +223,38 @@ export default function Home({ route }: Props) {
         });
     };
 
-    // Calculate total amount
+    const Logout = () => {
+    Dialog.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Logout",
+        textBody: "Are you sure you want to logout?",
+        button: "Logout",
+        closeOnOverlayTap: true,
+        onPressButton: async () => {
+            try {
+                
+                await AsyncStorage.removeItem('@loggedUser');
+  
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                });
+
+                Dialog.hide();
+            } catch (error) {
+                Toast.show({
+                    type: ALERT_TYPE.DANGER,
+                    title: 'Error',
+                    textBody: 'Something went wrong during logout',
+                });
+            }
+        },
+    });
+};
+
+   
     const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
-    // Render each expense item
     const renderExpense = ({ item }: { item: Expense }) => (
         <TouchableOpacity
             style={styles.expenseCard}
@@ -242,7 +271,7 @@ export default function Home({ route }: Props) {
         </TouchableOpacity>
     );
 
-    // Render category buttons
+    
     const renderCategoryButton = (cat: string) => (
         <TouchableOpacity
             key={cat}
@@ -265,8 +294,18 @@ export default function Home({ route }: Props) {
         <SafeAreaView style={{ flex: 1 }}>
             <AlertNotificationRoot>
                 <View style={styles.container}>
-                    
+
                     <View style={styles.header}>
+                        <View style={styles.headerContiner}>
+                            <View>
+                                <Text style={styles.welcomeText}>Hello..! - {logUser.name}</Text>
+                            </View>
+                            <View>
+                                <Pressable onPress={Logout}>
+                                    <Text style={styles.logOutBtn}> Log Out</Text>
+                                </Pressable>
+                            </View>
+                        </View>
                         <Text style={styles.headerTitle}>Expense Tracker</Text>
                         <View style={styles.totalContainer}>
                             <Text style={styles.totalLabel}>Total Spent</Text>
@@ -274,7 +313,7 @@ export default function Home({ route }: Props) {
                         </View>
                     </View>
 
-                   
+
                     <View style={styles.formContainer}>
                         <Text style={styles.sectionTitle}>Add New Expense</Text>
 
@@ -332,6 +371,21 @@ export default function Home({ route }: Props) {
 }
 
 const styles = StyleSheet.create({
+    logOutBtn: {
+        color: '#f15c5cff',
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    welcomeText: {
+        color: '#f8fafc',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    headerContiner: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+    },
     container: {
         flex: 1,
         backgroundColor: '#f8fafc',
