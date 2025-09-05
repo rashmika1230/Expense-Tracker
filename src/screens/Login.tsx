@@ -120,7 +120,7 @@ export default function LoginPage({ navigation }: Props) {
             setIsLoading(false);
         }
     };
-
+//view
     return (
         <SafeAreaView style={styles.container}>
             <AlertNotificationRoot>
