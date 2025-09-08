@@ -10,7 +10,12 @@ import Home from './src/screens/Home';
 export type RootStackParamList = {
   Login: undefined;
   Registration: undefined;
-  Home: { user: { id: number; name: string } };
+  Home: {
+    user:{
+      id: number;
+      name: string
+    }
+  };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

@@ -15,7 +15,7 @@ import { ALERT_TYPE, AlertNotificationRoot, Dialog, Toast } from 'react-native-a
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 
-const BACKEND_URL = "https://5840ccdf86e3.ngrok-free.app";
+const BACKEND_URL = "https://9f1e1b68ac76.ngrok-free.app";
 
 interface Expense {
     id: string;

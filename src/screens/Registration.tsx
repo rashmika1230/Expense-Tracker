@@ -16,7 +16,7 @@ import { RootStackParamList } from '../../App';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Registration'>;
 
-const BACKEND_URL = "https://5840ccdf86e3.ngrok-free.app";
+const BACKEND_URL = "https://9f1e1b68ac76.ngrok-free.app";
 
 export default function Registration({ navigation }: Props) {
   const [fullName, setFullName] = useState('');
@@ -26,7 +26,7 @@ export default function Registration({ navigation }: Props) {
   const [isLoading, setIsLoading] = useState(false);
 
   const validateForm = () => {
-    // Check if all fields are filled
+  
     if (!fullName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
       Toast.show({
         type: ALERT_TYPE.DANGER,
@@ -36,7 +36,7 @@ export default function Registration({ navigation }: Props) {
       return false;
     }
 
-    // Validate full name (at least 2 characters)
+    
     if (fullName.trim().length < 2) {
       Toast.show({
         type: ALERT_TYPE.DANGER,
@@ -46,7 +46,7 @@ export default function Registration({ navigation }: Props) {
       return false;
     }
 
-    // Validate email format
+  
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       Toast.show({
@@ -67,7 +67,7 @@ export default function Registration({ navigation }: Props) {
     //   return false;
     // }
 
-    // Check if passwords match
+  
     if (password !== confirmPassword) {
       Toast.show({
         type: ALERT_TYPE.DANGER,
@@ -151,14 +151,14 @@ export default function Registration({ navigation }: Props) {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} // adjust offset if header overlaps
+        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} 
       >
         <AlertNotificationRoot>
           <ScrollView
             style={styles.scrollView}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled" // allows tapping inputs/buttons while keyboard is open
+            keyboardShouldPersistTaps="handled"
           >
           
             <View style={styles.header}>

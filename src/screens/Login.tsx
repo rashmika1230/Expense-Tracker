@@ -16,7 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
-const BACKEND_URL = "https://5840ccdf86e3.ngrok-free.app";
+const BACKEND_URL = "https://9f1e1b68ac76.ngrok-free.app";
 
 export default function LoginPage({ navigation }: Props) {
     const [email, setEmail] = useState('');
